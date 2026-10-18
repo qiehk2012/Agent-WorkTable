@@ -20,8 +20,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS_DIR = path.join(ROOT, 'packages/core', 'migrations');
 const OUTPUT = path.join(ROOT, 'packages/core', 'src', 'migrations', 'generated.ts');
 
-/** 迁移文件名约定：<序号>_<名称>.sql（如 001_init.sql）。 */
-const FILENAME_RE = /^(\d+)_([a-z0-9-]+)\.sql$/;
+/** 迁移文件名约定：<序号>_<名称>.sql（如 001_init.sql、000_schema_migrations.sql）。名称段允许字母、数字、连字符与下划线。 */
+const FILENAME_RE = /^(\d+)_([a-z0-9_-]+)\.sql$/;
 
 /**
  * 生成 packages/core/src/migrations/generated.ts。

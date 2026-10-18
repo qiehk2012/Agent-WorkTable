@@ -56,10 +56,25 @@ docs/              PRD / ARCHITECTURE / tool-catalog（生成物）
 plugin/            分发产物目录（生成物，gitignore）
 ```
 
+## 已知阻塞：CI 工作流尚未入库
+
+`.github/workflows/verify.yml`（ubuntu + Node 22 跑 `npm ci` + `verify:typecheck` 的骨架）已写好，但**当前推送凭据缺 `workflow` scope**，GitHub 拒绝创建 `.github/workflows/*`：
+
+```
+remote rejected — refusing to allow a Personal Access Token to create or
+update workflow `.github/workflows/verify.yml` without `workflow` scope
+```
+
+文件留在工作区未跟踪，待下列任一方式解除后补推：
+
+1. 换一个有 `workflow` scope 的 token 重推（`git add .github && git commit && git push`）；
+2. 在 GitHub 网页端手动新建该文件（网页操作不受此 scope 限制）；
+3. 直接决定不在仓库里放 CI（本地 `npm run verify:*` 门禁照常可用）。
+
 ## 门禁（`npm run verify:*`，架构 §7.6）
 
-T01 起可用：`verify:typecheck`、`verify:module-boundaries`、`verify:catalog`。
-随任务交付：`verify:core` / `verify:concurrency` / `verify:embedded` / `verify:datahome`（T02）、`verify:mcp`（T03）、`verify:skill` / `verify:install` / `verify:host:cc` / `verify:host:wb`（T04–T05）。
+已可用：`verify:typecheck`、`verify:module-boundaries`、`verify:catalog`、`verify:core`、`verify:concurrency`、`verify:embedded`、`verify:datahome`（前三项 T01 起，后四项 T02 起）。
+随任务交付：`verify:mcp`（T03）、`verify:skill` / `verify:install` / `verify:host:cc` / `verify:host:wb`（T04–T05）。
 宿主实测握手（`verify:host:*`）为本地门禁，不入 CI；CI 以 mock 宿主目录替代（架构 R-2/R-3）。
 
 ## 相关文档

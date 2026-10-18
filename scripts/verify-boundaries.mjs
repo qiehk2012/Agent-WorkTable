@@ -78,7 +78,8 @@ function layerOf(relPath) {
   if (rest === 'index.ts') {
     return ROOT_LAYER;
   }
-  if (rest === 'ids.ts') {
+  // src 下顶层 L0 常量文件：ids.ts（ID 生成）、version.ts（版本号单一源）——无内部依赖
+  if (rest === 'ids.ts' || rest === 'version.ts') {
     return 0;
   }
   const slash = rest.indexOf('/');
