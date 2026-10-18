@@ -1,6 +1,6 @@
 # Agent-WorkTable P0 产品需求文档（PRD）
 
-> 版本：v1.0 · 2026-10-18 · 作者：许清楚（产品经理）
+> 版本：v1.1 · 2026-10-18 · 作者：许清楚（产品经理） · v1.1：确认架构偏差 D-4 / D-5 / D-6 / D-7 / D-10，同步 §3.1 / §4.1 / §4.4（§6 裁决记录由主理人更新）
 > 上游依据：《worktable 跨宿主插件开发方案》（2026-10-18 定稿）。本 PRD 的所有架构结论以该定稿为准，不发明冲突架构；定稿未覆盖的产品层细节（端口、UI 文案、CLI 交互流程）由本 PRD 补齐。
 
 ---
@@ -91,7 +91,7 @@
 | P0-5 | L1.5 控制室 web UI（只读） | US3 | ① MCP server 运行期间 `127.0.0.1:<port>` 可开（默认 55433，可配）；② 项目卡片网格显示 name / icon / 三态 / host / lastEvent；③ 点卡片见产物列表，html 于 sandbox iframe 渲染，markdown / image / file 可查看；④ 顶栏显示实例信息（dataHome、连接方式、schema 版本）；⑤ 状态 5s 内自动刷新；⑥ 仅绑 127.0.0.1、无凭证、CSP 收紧 | 定稿 §8.3 明确「建议并入 P0」——它是全部宿主（含 CLI）的可视化保底 |
 | P0-6 | SKILL.md 纪律层 | US1 / US2 / US3 | ① 一份源文件，构建时注入版本号与工具数，全文无 `@latest`；② frontmatter `name: worktable`；③ 装入 `~/.claude/skills/` 与 `~/.workbuddy/skills/` 后被宿主识别；④ 五段式工作流写入（先路由 → 绑定优先 → 产物协议 → 状态上报 → status 收尾） | dsh-worktable 最大不可靠点即缺纪律层；这是「结果必须落盘」的唯一保障 |
 | P0-7 | install.sh 安装事务 | US4 | ① discover 识别已装宿主；② `--dry-run` 列出每宿主写入计划；③ 写入前备份 `<path>.worktable.backup`（已有备份绝不覆盖）；④ 原子写 + readback 比对，不一致即回滚；⑤ doctor 复验：CC / WB 隔离握手见 10 工具 + skill frontmatter 校验；⑥ 重复安装幂等 | 五宿主配置格式各异（JSON / YAML / TOML），事务是安装不出事的最低保障（定稿 §10） |
-| P0-8 | 宿主配置写入（CC + WB 实测） | US1 / US4 | ① Claude Code：`~/.claude.json` 顶层 `mcpServers.worktable` + `~/.claude/skills/worktable/`，隔离握手见 10 工具；② WorkBuddy：`~/.workbuddy/mcp.json` `mcpServers` + `~/.workbuddy/skills/worktable/`，会话工具列表出现 `mcp__worktable__*` 10 个；③ Hermes / Codex：探测到即写（结构化解析后枚举 key 复验，禁 grep 验嵌套配置），未探测到交付模板 + 文档；④ dsh：仅模板 + 文档 | 任务指定的最低宿主覆盖；写入形态沿用定稿 §7.2 / §7.3 / §7.4 / §7.5 |
+| P0-8 | 宿主配置写入（CC + WB 实测） | US1 / US4 | ① Claude Code：`~/.claude.json` 顶层 `mcpServers.worktable` + `~/.claude/skills/worktable/`，隔离握手见 10 工具；② WorkBuddy：`~/.workbuddy/mcp.json` `mcpServers` + `~/.workbuddy/skills/worktable/`，重启会话后工具列表出现 `mcp__worktable__*` 10 个（WorkBuddy 无 CLI 自动握手，验收以会话内工具可见为准，裁决 D-6）；③ Hermes / Codex：探测到即写（结构化解析后枚举 key 复验，禁 grep 验嵌套配置），未探测到交付模板 + 文档；④ dsh：仅模板 + 文档 | 任务指定的最低宿主覆盖；写入形态沿用定稿 §7.2 / §7.3 / §7.4 / §7.5 |
 | P0-9 | 产物挂载协议 | US3 | ① `entry` 为项目内相对路径时，单事务写 `panes` + `artifacts` 两行并返回 `art_` id + `mountUri`；② payload 文件真实存在于 `<project>/.worktable/artifacts/`；③ `entry` 含 `../`、绝对路径或 symlink 逃逸 → `path-escape`，库中零写入；④ bindingId 进 `panes` 复合主键，晚到写入不覆盖新绑定（并发用例验证） | 产物协议是跨宿主通用的核心价值（定稿 F5）；路径收容是安全底线 |
 | P0-10 | 绑定与状态机 | US2 | ① `bind_session` 返回 `bnd_` id + revision=1；② 同项目第二个 active binding → `binding-conflict`（数据库部分唯一索引保证）；③ `force=true` 顶替并将旧 binding 置 done；④ `update_status` 带错误 `expectedRevision` → `revision-conflict`；⑤ 两进程并发 bind 一成一败；⑥ 三态 working / needs-you / done 全链路在控制室可见 | 控制室的数据来源；唯一索引 + 乐观并发是定稿 §4.3 / §4.4 的数据库层保证 |
 | P0-11 | 端到端垂直链路（DoD） | US1–US5 | ① 干净 macOS 机器：一条 `install.sh` → `worktable init` → CC 会话内 list / new / bind / mount / status 全过 → 浏览器打开 `uiUrl` 见项目与产物 → `worktable check` 全绿；② 同一数据库在 WorkBuddy 宿主可见完全相同状态；③ 清除宿主配置重装后数据仍在（证明事实源在 Postgres 不在宿主目录） | 本次交付的定义性验收 |
@@ -140,7 +140,7 @@
 | 1 | `worktable_list_projects` | `includeHidden?: boolean`（默认 false） | 项目数组 + 每项状态摘要（active binding、pending 产物数、最近活动时间） | `setup-required`、`db-unavailable`、`schema-mismatch` | P0 |
 | 2 | `worktable_open_project` | `projectId` 或 `name`（二选一，必填） | `{ folder, bindings[], artifacts[], recentEvents[] }`；`recentEvents` 随 P1-8 启用，本期返回空数组 | `project-not-found`、`setup-required` | P0 |
 | 3 | `worktable_create_project` | `name`、`folder`、`icon?`、`layoutPreset?` | `{ projectId }` | `duplicate-project`；folder 不存在走 MCP 参数校验（invalid params + remediation） | P0 |
-| 4 | `worktable_update_project` | `projectId`、`name?`、`icon?`、`order?`、`hidden?`、`delete?`、`confirm?` | 更新后项目；`delete` 需 `confirm: true`，只删注册项（级联清 bindings/panes/artifacts 行），不动文件夹 | `project-not-found`、`duplicate-project`、`revision-conflict` | P0 |
+| 4 | `worktable_update_project` | `projectId`、`name?`、`icon?`、`order?`、`hidden?`、`delete?`、`confirm?` | 更新后项目；`delete` 需 `confirm: true`，只删注册项（级联清 bindings/panes/artifacts 行），不动文件夹 | `project-not-found`、`duplicate-project` | P0 |
 | 5 | `worktable_bind_session` | `projectId`、`host`、`sessionId`、`cwd`、`force?`（默认 false） | `{ bindingId, revision }` | `binding-conflict`、`project-not-found`、`db-conflict` | P0 |
 | 6 | `worktable_status` | 无 | 控制室卡片数组 + `uiUrl`（零模型调用，纯本地聚合） | `setup-required`、`db-unavailable` | P0 |
 | 7 | `worktable_update_status` | `projectId`、`status: working\|needs-you\|done`、`note?`、`expectedRevision?` | `{ revision }` | `revision-conflict`、`project-not-found` | P0 |
@@ -154,22 +154,24 @@
 
 1. **工具发现纪律**：本期 catalog 生成 10 个工具；SKILL.md、文档、doctor 中的工具数一律由生成物注入，禁止硬编码「12」（定稿生成物纪律）。
 2. **mount_artifact 事务**：① 规范化 `entry` 并做路径收容校验（拒绝 `../`、绝对路径、symlink 逃逸；resolve 后仍须在项目 folder 内）；② 校验 payload 文件存在且可读（不存在 → invalid params + remediation「先落盘再挂载」）；③ 单事务 UPSERT `panes` + INSERT `artifacts`；④ bindingId 进 `panes` 复合主键，晚到写入不覆盖新绑定。
-3. **status 卡片字段**：`{ projectId, name, icon, status, host, cwd, lastEvent, pendingArtifacts, preview, updatedAt }`；`preview` 为最近挂载产物的 L1.5 查看链接。`worktable_status` 返回体示例：
+3. **status 卡片字段**：`{ projectId, name, icon, status, host, cwd, lastEvent, pendingArtifacts, preview, updatedAt }`；`preview` 为最近挂载产物的 L1.5 查看链接。web server 未起来时（如端口被占用）附加 `webUnavailable: true` 与原因说明，其余字段照常返回（见 §4.4）。所有时间戳为 UTC ISO 8601（`toISOString()`，Z 后缀，裁决 D-7）；L1.5 页面可按浏览器本地时区展示。`worktable_status` 返回体示例：
 
 ```json
 {
   "uiUrl": "http://127.0.0.1:55433/",
-  "generatedAt": "2026-10-18T10:00:00+08:00",
+  "generatedAt": "2026-10-18T02:00:00.000Z",
   "projects": [
     { "projectId": "prj_9f2c…", "name": "双足机器人", "icon": "🤖",
       "status": "working", "host": "claude-code", "cwd": "~/dev/biped",
-      "lastEvent": "mounted art_7f3a…", "pendingArtifacts": 0 }
+      "lastEvent": "mounted art_7f3a…", "pendingArtifacts": 0,
+      "preview": "http://127.0.0.1:55433/a/art_7f3a…/index.html" }
   ]
 }
 ```
 
 4. **2 个 prompt（P0 附带，静态模板）**：`control-room`（把 status 渲染为当前宿主可用形态——CLI 宿主输出 Markdown 表格）；`window-task`（标准窗口任务流：open_project → 干活 → mount_artifact → update_status）。
 5. **数据位置选择不进 MCP 工具**（stdio 不能弹交互）：未初始化时统一返回 `setup-required`，由 Agent 在对话中转述候选，用户选定后走 CLI `worktable init` 落 config 或 env（定稿 §4.1 / §5）。
+6. **错误码与 DDL 对齐（裁决 D-10）**：`revision-conflict` 仅由 `worktable_update_status` 产生——定稿 DDL `projects` 表无 revision 列，`worktable_update_project` 不擅自加列。
 
 ### 4.2 错误契约（12 码，本期全部实现）
 
@@ -216,7 +218,7 @@
 | 项 | 规格 |
 |---|---|
 | 监听 | 仅 `127.0.0.1` 回环；默认端口 **55433**（避开 embedded PG 的 55432）；`WORKTABLE_WEB_PORT` / `config.yaml` 可配；端口占用则明确报错并建议换端口，不静默换 |
-| 生命周期 | 跟随 MCP server 进程（stdio 会话期间可用）；`worktable ui` 可主动拉起并打开浏览器 |
+| 生命周期 | 双模式（裁决 D-5）：CLI 场景（`worktable ui`）由前台进程自管 web server；MCP 场景跟随 MCP server 进程（stdio 会话期间可用）。端口被占用时：CLI 明确报错并建议换端口；MCP 场景 stderr 明示 + `worktable_status` 附 `webUnavailable`——不静默换端口、不拖垮工具 |
 | 页面 | 单页 `/`：顶栏实例信息 + 项目卡片网格 + 项目详情（绑定信息 + 产物列表 + 产物查看） |
 | 状态徽标文案 | working = 进行中（蓝）；needs-you = 待你决策（橙）；done = 已完成（灰） |
 | 空状态文案 | 「还没有项目。用 `worktable new` 创建，或让 Agent 调用 `worktable_create_project`」 |

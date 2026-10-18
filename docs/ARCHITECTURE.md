@@ -988,12 +988,12 @@ adapters/install                     （只调 CLI 与文件操作，不 import 
 | D-3 | 定稿 §7.4 写「隔离握手见 **12** 个工具」 | P0 实为 10 个；握手断言从 `docs/tool-catalog.md` 读取期望值，不写死数字 |
 | D-4 | PRD §4.1 备注 3 status 卡片字段表含 `preview`（最近挂载产物的 L1.5 查看链接），但同节返回体示例 JSON 无 `preview` | 按字段表实现（`preview = uiUrl + /a/:artifactId/<入口文件名>`）；示例视为节选。**请产品确认** |
 | D-5 | PRD §4.4 说 L1.5「跟随 MCP server 进程」；PRD §4.3 又有 CLI `worktable ui` 主动拉起——两者并存时 CLI 进程需自行托管 web server | 架构填补：`worktable ui` 在前台进程内起 web server（打印 uiUrl、尝试系统浏览器、Ctrl-C 退出）；MCP 场景下 web 端口占用 → stderr 明确错误 + status 响应附 `webUnavailable` 原因，**不静默换端口、不拖垮 MCP 工具**；CLI 场景端口占用 → 明确报错退出。**请产品确认** |
-| D-6 | PRD P0-7⑤ 要求 install.sh doctor 对 CC/WB 做隔离握手见 10 工具；CC 有 `claude -p --mcp-config` 可自动化，**WorkBuddy 为 GUI 应用、无等价 CLI**（截至本设计未发现） | 落地口径：install.sh 对 WB 做结构化配置复验（解析 `mcp.json` 枚举 key）+ 输出会话内确认指引；WB 实测握手由人工在会话内完成并记入 `docs/E2E-CHECKLIST.md`。「CC+WB 实测握手」作为发布前人工验收项保持有效，只是 install.sh 不能对 WB 全自动。**请主理人确认此口径** |
+| D-6 | PRD P0-7⑤ 要求 install.sh doctor 对 CC/WB 做隔离握手见 10 工具；CC 有 `claude -p --mcp-config` 可自动化，**WorkBuddy 为 GUI 应用、无等价 CLI**（截至本设计未发现） | 落地口径：install.sh 对 WB 做结构化配置复验（解析 `mcp.json` 枚举 key）+ 输出会话内确认指引；WB 实测握手由人工在会话内完成并记入 `docs/E2E-CHECKLIST.md`。「CC+WB 实测握手」作为发布前人工验收项保持有效，只是 install.sh 不能对 WB 全自动。**主理人裁决（2026-10-18）：批准此口径**——WB 无 CLI 自动握手是客观事实，结构化复验 + 会话内人工确认 + checklist 留痕即正式验收路径 |
 | D-7 | PRD §4.1 示例 `generatedAt` 带 `+08:00` 偏移；DB 为 `TIMESTAMPTZ`（UTC 存储） | 架构口径：DB 存 UTC；API 序列化为 UTC ISO（`Z` 后缀）；示例时区仅作示意。**请产品确认无本地化要求** |
 | D-8 | 定稿 §13 P0 CLI 清单含 `backup`；PRD §3.0 将 `backup`/`relocate` 移 P1 | 按 PRD：P0 CLI 12 命令不含 backup/relocate |
 | D-9 | 定稿 §12/P3-4 要求 `plugin.json` 过官方 schema 校验 | P0 只生成 `plugin/` 分发形态，不做官方 schema 校验（P3-4） |
 | D-10 | PRD §4.1 #4 `worktable_update_project` 主要错误码列 `revision-conflict`，但定稿 DDL `projects` 表**无 revision 列**（revision 仅存在于 bindings） | 实现按定稿 DDL，不擅自加列：P0 该码仅由 `update_status` 产生；`update_project` 的契约码为 `project-not-found`/`duplicate-project`（delete 缺 confirm 走 invalid params）。catalog 中按此标注。**请产品确认** |
-| D-11 | 定稿 §4.1 连接解析链第三级「embedded 默认」与 PRD P0-2③「未初始化返回 `setup-required`，不静默默认」存在语义张力（若把 embedded 默认当作无配置 fallback，就会静默起库） | 架构裁决：解析链实现为 env > `config.yaml`（声明 `mode: embedded` 时 URL 缺省为 socket/55432）> **`setup-required`**；即「embedded 默认」仅作为 init 后 embedded 模式内的 URL 缺省，完全无配置时不静默起 embedded。**请产品确认此解释** |
+| D-11 | 定稿 §4.1 连接解析链第三级「embedded 默认」与 PRD P0-2③「未初始化返回 `setup-required`，不静默默认」存在语义张力（若把 embedded 默认当作无配置 fallback，就会静默起库） | 架构裁决：解析链实现为 env > `config.yaml`（声明 `mode: embedded` 时 URL 缺省为 socket/55432）> **`setup-required`**；即「embedded 默认」仅作为 init 后 embedded 模式内的 URL 缺省，完全无配置时不静默起 embedded。**主理人裁决（2026-10-18）：批准**——这与 PRD §6 裁决 1/「No silent fallback」纪律一致；请产品知悉 |
 
 ### 8.2 架构假设与待确认（UNCLEAR）
 
