@@ -44,9 +44,14 @@ export function assembleServer(core: WorktableCore): McpServer {
       async (args, _extra): Promise<import('@modelcontextprotocol/sdk/types.js').CallToolResult> => {
         try {
           const data = await implementation.handler(ctx, (args ?? {}) as Record<string, unknown>);
+          // structuredContent 必须是对象（纯数组会被 SDK 判 -32602）；列表类结果包 result 字段
+          const payload =
+            Array.isArray(data) || data === null || typeof data !== 'object'
+              ? { result: data }
+              : data;
           return {
             content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-            structuredContent: data as Record<string, unknown>,
+            structuredContent: payload as Record<string, unknown>,
           };
         } catch (error: unknown) {
           return projectError(error);
@@ -74,12 +79,30 @@ export function assembleServer(core: WorktableCore): McpServer {
 }
 
 /**
- * stdio 入口主流程。
+ * stdio 入口主流程：连传输 + 拉起 L1.5（PRD §4.4「生命周期跟随 MCP server 进程」）。
+ *
+ * web 拉起失败不拖垮工具（偏差 D-5 护栏）：stderr 明示 + status 响应照常返回，
+ * 只是 preview 链接在该会话期间不可点。
  */
 export async function runStdioServer(): Promise<void> {
   const core = await createWorktable();
   const server = assembleServer(core);
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  process.stderr.write(`[worktable-mcp] ready（v${core.version}，mode=${core.mode}，dataHome=${core.dataHome}）\n`);
+
+  let webHandle: import('@worktable/core').WebHandle | null = null;
+  try {
+    webHandle = await core.startWeb();
+  } catch (error) {
+    process.stderr.write(
+      `[worktable-mcp] L1.5 控制室未启动（不影响工具）：${error instanceof Error ? error.message : String(error)}\n`,
+    );
+  }
+  process.on('exit', () => {
+    void webHandle?.close().catch(() => undefined);
+  });
+
+  process.stderr.write(
+    `[worktable-mcp] ready（v${core.version}，mode=${core.mode}，dataHome=${core.dataHome}${webHandle === null ? '' : `，web=${webHandle.url}`}）\n`,
+  );
 }

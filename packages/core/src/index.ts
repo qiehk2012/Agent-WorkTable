@@ -101,6 +101,7 @@ export function migrateStatus(store: Store): ReturnType<typeof migrationStatus> 
 
 export { ensureCluster, openConnection, createStore, runMigrations, migrationStatus };
 export type { Store } from './store/index.js';
+export type { WebHandle } from './web/server.js';
 export * from './errors/index.js';
 export * from './config/index.js';
 export * from './ids.js';
