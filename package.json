@@ -1,0 +1,39 @@
+{
+  "name": "agent-worktable",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-WorkTable 跨宿主插件（P0 垂直切片）：Postgres 单一事实源 + MCP 工具层 + SKILL 纪律层 + L1.5 只读控制室",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "gen:migrations": "node scripts/gen-migrations.mjs",
+    "gen:catalog": "node scripts/gen-catalog.mjs",
+    "gen:skill": "node scripts/gen-skill.mjs",
+    "verify:typecheck": "tsc --noEmit -p packages/core && tsc --noEmit -p packages/mcp",
+    "verify:module-boundaries": "node scripts/verify-boundaries.mjs",
+    "verify:catalog": "node scripts/gen-catalog.mjs --check",
+    "verify:core": "vitest run packages/core",
+    "verify:concurrency": "vitest run packages/core/tests/concurrency.test.ts",
+    "verify:embedded": "vitest run packages/core/tests/embedded.lifecycle.test.ts",
+    "verify:datahome": "vitest run packages/core/tests/datahome.test.ts",
+    "verify:mcp": "vitest run packages/mcp",
+    "verify:skill": "node scripts/verify-skill.mjs",
+    "verify:install": "vitest run packages/core/src/hosts",
+    "verify:host:cc": "node scripts/verify-host-cc.mjs",
+    "verify:host:wb": "node scripts/verify-host-wb.mjs",
+    "verify:properties": "vitest run packages/core"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  }
+}

@@ -1,0 +1,17 @@
+# 依赖
+node_modules/
+
+# 构建产物（`dist/` 已覆盖各包 dist/，显式保留一行说明用途）
+dist/
+packages/*/dist/
+
+# 生成物 · 禁手改（由 scripts/gen-*.mjs 生成，改生成链不改产物，架构 §7.6）
+plugin/
+packages/core/src/migrations/generated.ts
+
+# 测试与临时文件
+coverage/
+*.tsbuildinfo
+
+# 系统杂物
+.DS_Store

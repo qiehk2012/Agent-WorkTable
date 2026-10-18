@@ -900,7 +900,7 @@ sequenceDiagram
 | 包 | 版本范围 | 用途 |
 |---|---|---|
 | `pg` | `^8.11.0`（实现期锁定） | Postgres 客户端（`Pool`，max 5，全部 SQL 的出口） |
-| `embedded-postgres` | `^17.5.0`（实现期锁定；内置 zonky PG 13–18 二进制，首次 init 需联网下载 ~35MB） | embedded 集群生命周期管理 |
+| `embedded-postgres` | **`17.5.0-beta.15` 精确锁定**（见下方版本事实；内置 zonky PG 二进制，首次 init 需联网下载 ~35MB） | embedded 集群生命周期管理 |
 | `@modelcontextprotocol/sdk` | `^1.0.0`（实现期锁定；注意与 zod 版本配对） | MCP stdio server（工具/prompt/传输） |
 | `zod` | `^3.23.0`（若 SDK 要求 zod 4 则随 SDK 锁定） | 工具入参 schema 与参数校验 |
 | `yaml` | `^2.4.0` | `config.yaml` 与 Hermes `config.yaml` 结构化读写 |
@@ -918,6 +918,8 @@ sequenceDiagram
 | `fast-check` | `^4.0.0`（可选，P0 可后置） | 属性测试（`verify:properties`；P0 关键不变量先用手写测试覆盖） |
 
 **锁定纪律**：上表「实现期锁定」项须在 T01 内一次性锁定并写入 `package-lock.json`；`embedded-postgres` 与 `@modelcontextprotocol/sdk` 的锁定版本要记录在 README（两者是唯二具有外部二进制/协议兼容性约束的依赖）。
+
+**版本事实（T01 实测纠正，原表 `^17.5.0` 写法不可行）**：`embedded-postgres` 在 npm 上**只有 beta 发布**——全部版本形如 `17.5.0-beta.15`，`dist-tags.latest = 18.4.0-beta.17`，不存在 stable 版本；而 semver 的 caret 范围不含同 major 的预发布，`^17.5.0` 会解析失败。因此必须**精确锁定到 `17.5.0-beta.15`**（PG 17 主线）。推论：日后升级到 PG 18 是显式改锁，不会被 bump 悄悄带走——这与定稿 §9「版本钉死」纪律一致，但要求 README 明示该依赖为何是精确版本而非范围。
 
 ---
 
