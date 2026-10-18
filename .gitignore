@@ -15,3 +15,7 @@ coverage/
 
 # 系统杂物
 .DS_Store
+
+# 需求与设计文档仅本地保留，不入库（主理人要求）
+docs/PRD.md
+docs/ARCHITECTURE.md
