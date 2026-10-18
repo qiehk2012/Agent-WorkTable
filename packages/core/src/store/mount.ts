@@ -4,9 +4,8 @@
  * 为什么必须在一个事务里：panes 的复合主键 (pane_id, binding_id) 是为了「晚到写入不覆盖新绑定」（dsh 教训），
  * 若 pane 写入与 artifact 写入分离，中途失败会留下有 pane 无 artifact 的半成品挂载。
  */
-import type { Pool } from 'pg';
 import { WorktableError, mapPgError } from '../errors/index.js';
-import type { Artifact, ArtifactType, Transactor } from './types.js';
+import type { ArtifactType, Transactor } from './types.js';
 
 /** 挂载入参（entry 已由 PayloadResolver 收容校验过；payloadPath 为项目内相对路径）。 */
 export interface MountArtifactInput {
@@ -75,23 +74,4 @@ export async function mountArtifact(
       throw mapped ?? error;
     }
   });
-}
-
-/**
- * @param pool 连接池。
- * @param query projectId 与可选状态过滤。
- * @returns 产物列表。
- */
-export async function listArtifacts(
-  pool: Pool,
-  query: { projectId: string; status?: 'pending' | 'mounted' | 'locked' },
-): Promise<Artifact[]> {
-  const { rows } = await pool.query(
-    `SELECT artifact_id, project_id, pane_id, binding_id, title, type, payload_path, status, meta, created_at
-       FROM artifacts
-      WHERE project_id = $1 AND ($2::text IS NULL OR status = $2)
-      ORDER BY created_at DESC`,
-    [query.projectId, query.status ?? null],
-  );
-  return rows as Artifact[];
 }

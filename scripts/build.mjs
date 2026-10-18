@@ -62,6 +62,9 @@ async function bundle({ outfile, entry, fallback }) {
     sourcemap: true,
     logLevel: 'warning',
     absWorkingDir: ROOT,
+    // embedded-postgres 的平台二进制是 optionalDependencies（npm 只装当前平台的那个）：
+    // 构建机上没有别的平台的包，必须 external 化，运行时按机器动态 require。
+    external: ['@embedded-postgres/*'],
   });
   console.log(`[build] ${outfile} OK`);
 }

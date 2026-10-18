@@ -26,6 +26,16 @@ export interface ControlRoomData {
 }
 
 /**
+ * @param value payload 相对路径。
+ * @returns 入口文件名（basename）。
+ */
+function baseName(value: unknown): string {
+  const text = String(value ?? '');
+  const segments = text.split('/');
+  return segments[segments.length - 1] ?? '';
+}
+
+/**
  * @param pool 连接池。
  * @returns 控制室数据。
  */
@@ -59,8 +69,11 @@ export async function getControlRoom(pool: Pool): Promise<ControlRoomData> {
         cwd: (row['cwd'] as string | null) ?? null,
         lastEvent: lastId === undefined || lastId === null ? null : `mounted ${lastId}`,
         pendingArtifacts: Number(row['pending_artifacts'] ?? 0),
-        // preview 的 URL 组装需要 uiUrl，交给 services；此处只给入口路径
-        preview: lastId === undefined || lastId === null ? null : `/a/${String(lastId)}/`,
+        // preview 为 `/a/<artifactId>/<入口文件名>` 后缀，完整 URL 由 services 拼上 uiUrl（偏差 D-4 口径）
+        preview:
+          lastId === undefined || lastId === null
+            ? null
+            : `/a/${String(lastId)}/${encodeURIComponent(baseName(row['last_payload_path']))}`,
         updatedAt: row['updated_at'] === undefined || row['updated_at'] === null
           ? null
           : (row['updated_at'] as Date),

@@ -13,6 +13,7 @@ import * as metaStore from './meta.js';
 import * as projects from './projects.js';
 import * as bindings from './bindings.js';
 import * as mounts from './mount.js';
+import * as artifactQueries from './artifacts.js';
 import * as status from './status.js';
 import type {
   Artifact,
@@ -75,6 +76,7 @@ export interface Store {
 
   mountArtifact(input: mounts.MountArtifactInput): Promise<mounts.MountArtifactResult>;
   listArtifacts(query: { projectId: string; status?: ArtifactStatus }): Promise<Artifact[]>;
+  getArtifactById(artifactId: string): Promise<Artifact | null>;
 
   getControlRoom(): Promise<status.ControlRoomData>;
   getProjectContext(ref: ProjectRef): Promise<ProjectContext | null>;
@@ -143,7 +145,8 @@ export function createStore(pool: Pool): Store {
     listBindings: (projectId) => bindings.listBindings(pool, projectId),
 
     mountArtifact: (input) => withOneRetry('mountArtifact', () => mounts.mountArtifact(createTransactor(pool), input)),
-    listArtifacts: (query) => mounts.listArtifacts(pool, query),
+    listArtifacts: (query) => artifactQueries.listArtifacts(pool, query),
+    getArtifactById: (artifactId) => artifactQueries.getArtifactById(pool, artifactId),
 
     getControlRoom: () => status.getControlRoom(pool),
     getProjectContext: (ref) => status.getProjectContext(pool, ref),
