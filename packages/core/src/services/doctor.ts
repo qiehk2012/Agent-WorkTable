@@ -11,6 +11,12 @@ import { isWorktableError, WorktableError } from '../errors/index.js';
 import type { Store } from '../store/index.js';
 import type { CheckReport } from '../store/types.js';
 
+/** 迁移状态的最小形态（与 migrations/runner 的返回对齐，避免 doctor 反向依赖 L1 实现）。 */
+interface MigrationStatusLike {
+  applied: Array<{ version: string; checksum: string }>;
+  pending: string[];
+}
+
 /** DoctorService 接口。 */
 export interface DoctorService {
   check(): Promise<CheckReport>;
@@ -51,6 +57,8 @@ export function createDoctorService(deps: {
   store: Store;
   resolver: PayloadResolver;
   version: string;
+  /** 迁移状态来源（L3 可依赖 L1：由组合根注入，store 保持不依赖 migrations）。 */
+  migrationStatus?: () => Promise<MigrationStatusLike>;
 }): DoctorService {
   const { store, resolver } = deps;
 
@@ -65,7 +73,14 @@ export function createDoctorService(deps: {
       };
 
       try {
-        report.schemaVersion = await store.readSchemaVersion();
+        // schema 版本以迁移账本为准（001 起记录于 schema_migrations；meta.schema_version 仅为冗余展示位）
+        if (deps.migrationStatus !== undefined) {
+          const status = await deps.migrationStatus();
+          report.schemaVersion =
+            status.applied.length > 0 ? (status.applied[status.applied.length - 1]?.version ?? null) : null;
+        } else {
+          report.schemaVersion = await store.readSchemaVersion();
+        }
       } catch (error) {
         report.dbReachable = false;
         const mapped = isWorktableError(error)

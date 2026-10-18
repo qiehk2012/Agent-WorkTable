@@ -54,7 +54,13 @@ export async function createWorktable(env: NodeJS.ProcessEnv = process.env): Pro
 
   const artifacts = createArtifactService({ store, resolver });
   const controlRoom = createControlRoomService({ store, webPort });
-  const doctor = createDoctorService({ store, resolver, version: WORKTABLE_VERSION });
+  const doctor = createDoctorService({
+    store,
+    resolver,
+    version: WORKTABLE_VERSION,
+    // doctor 的 schema 版本以迁移账本为准；由组合根注入（store 不反向依赖 migrations）
+    migrationStatus: () => migrationStatus(store.ledger),
+  });
 
   return {
     pool: connection.pool,

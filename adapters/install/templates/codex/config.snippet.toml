@@ -1,0 +1,6 @@
+# Codex 手工配置模板（install.sh 未探测到 ~/.codex/config.toml，或 Codex < 0.147.0 时用）
+# 合并进 ~/.codex/config.toml；0.147.0+ 也可走 plugin/ 目录原生加载（${PLUGIN_ROOT} 自动展开）
+[mcp_servers.worktable]
+command = "node"
+args = ["<Agent-WorkTable 仓库绝对路径>/packages/mcp/dist/mcp.js"]
+startup_timeout_sec = 30

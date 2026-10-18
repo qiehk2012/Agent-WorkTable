@@ -220,6 +220,10 @@ function checkImports(relPath, layer, stripped, violations) {
     if (layer === ROOT_LAYER) {
       continue; // 组合根可依赖全部
     }
+    // L4（cli/web）是顶层应用：装配走组合根 src/index.ts（PRD P0-4 ③「CLI 与 MCP 共用组合根」）
+    if (targetLayer === ROOT_LAYER && layer >= 4) {
+      continue;
+    }
     if (targetLayer > layer) {
       violations.push({
         relPath,

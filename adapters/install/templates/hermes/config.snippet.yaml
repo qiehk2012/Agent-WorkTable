@@ -1,0 +1,7 @@
+# Hermes MCP server 手工配置模板（install.sh 未探测到 ~/.hermes/config.yaml 时用）
+# 合并进 ~/.hermes/config.yaml 的 mcp_servers 段（YAML 缩进以现有文件为准）
+mcp_servers:
+  worktable:
+    command: node
+    args:
+      - <Agent-WorkTable 仓库绝对路径>/packages/mcp/dist/mcp.js
